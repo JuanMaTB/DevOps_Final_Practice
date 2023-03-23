@@ -1,0 +1,23 @@
+<html>
+    <head>
+        <title>Quiz Web App</title>
+        {% include 'extra/head.html' %}
+    </head>
+<body>
+
+    {% include 'main/extra/navbar.html' %}
+    {% extends 'main/extra/content.html' %}
+    {% block content_page %}
+        <div class='col-lg-6'>
+            <h3 class='mb-3'>Search quiz  : </h3>
+            <p class='hero-text text-dark'>
+                you can search by question, quiz title, or quiz code 
+            </p>
+            <input type='text' class='btn btn-outline-dark mr-2' id='search'><input type='submit' class='btn btn-outline-dark' value='Submit' id='submitsearch'>
+            <div id='messages' class='mt-2 mb-2'></div>
+        </div>
+    {% endblock %}
+    {% include 'extra/script.html' %}
+    {% include 'extra/csrf.html' %}
+</body>
+</html>
