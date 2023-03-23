@@ -1,0 +1,153 @@
+name: "GKE cluster"
+
+on:
+  push:
+    paths:
+    - 'terraform-provision-gke-cluster/**'
+    - 'config-extra-cluster-operators/**'
+    - '!**/*.md'
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  terraform:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    # env:
+    #     GOOGLE_CREDENTIALS: ${{ secrets.GCP_SECRET }}
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    # strategy:
+    #   matrix:
+    #     working-directory: [terraform-provision-gke-cluster]
+    defaults:
+      run:
+        working-directory: terraform-provision-gke-cluster
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+    
+      - id: 'auth'
+        name: Autentificación Gcloud
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt
+        
+      - name: Terraform version
+        run: terraform version
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        if: github.event_name == 'push'
+        run: terraform plan -no-color
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -auto-approve
+
+  operator-provisioning:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    name: cluster-operator-provisioning
+    runs-on: ubuntu-latest
+    steps:
+      # - id: get-credentials
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      #   uses: google-github-actions/get-gke-credentials@main
+      #   with:
+      #     cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+      #     location: us-central1
+      #     credentials: ${{ secrets.GCP_SECRET }}
+      - name: Checkout
+        uses: actions/checkout@v3 
+      
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - id: 'get-credentials'
+        uses: 'google-github-actions/get-gke-credentials@v1'
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: 'us-central1'
+
+      - id: prometheus-stack
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm -n monitoring upgrade --install prometheus prometheus-community/kube-prometheus-stack -f terraform-provision-gke-cluster/assets/custom_values_prometheus.yaml --set adminPassword=${{ secrets.GRAFANA_ADMINPASSWD }} --create-namespace --wait --version 34.1.1
+
+      - id: ingress-controller
+        run: |
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+          helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx \
+            --namespace ingress-nginx \
+            --create-namespace \
+            --wait
+            # --version 4.4.2
+
+
+          #helm repo add nginx-stable https://helm.nginx.com/stable
+          #helm repo update
+          #helm install my-release nginx-stable/nginx-ingress
+
+      - id: cert-manager
+        run: |
+          helm repo add jetstack https://charts.jetstack.io
+          helm repo update
+          helm upgrade --install \
+            cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --version v1.11.0 \
+            --set installCRDs=true    
+
+
+      - id: extra-operators-configuration
+        run: |
+          helm upgrade --install extra-operators-configuration config-extra-cluster-operators \
+            --set externalDnsApiToken=${{ secrets.CF_API_TOKEN }} \
+            --set externalDnsApiMail=${{ secrets.CF_API_EMAIL }} \
+            --wait
+
+      - id: get-pods
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: kubectl get pods -A
+
+      # - id: install-flagger
+      #   if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      #   run: |
+      #     helm repo add flagger https://flagger.app
+      #     helm install my-flagger flagger/flagger --version 1.4.2
+      # - id: install-istio-operator
+      #   if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      #   run: |
+      #     helm repo add stevehipwell https://stevehipwell.github.io/helm-charts/
+      #     helm install my-istio-operator stevehipwell/istio-operator --version 1.2.2
+      # - id: get-pods-after-bootstrap
+      #   if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+      #   run: kubectl get pods -A

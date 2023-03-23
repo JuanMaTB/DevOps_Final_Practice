@@ -1,0 +1,59 @@
+name: "APP DEPLOY"
+
+on:
+  # release:
+  #   types: [published, released]
+  #   branches:
+  #     - main
+  push:
+    paths:
+    - 'quiz-app-helm/**'
+    - '!**/*.md'
+    branches:
+      - main
+  workflow_run:
+    workflows: ["release-build"]
+    types:
+      - completed
+  
+
+
+jobs:
+  app:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    name: app deploy helm
+    runs-on: ubuntu-latest
+    steps:
+      # - id: get-credentials
+      #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      #   uses: google-github-actions/get-gke-credentials@main
+      #   with:
+      #     cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+      #     location: us-central1
+      #     credentials: ${{ secrets.GCP_SECRET }}
+      - name: Checkout
+        uses: actions/checkout@v3 
+      
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v1'
+        with:
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - id: 'get-credentials'
+        uses: 'google-github-actions/get-gke-credentials@v1'
+        with:
+          cluster_name: ${{ secrets.GKE_CLUSTER_NAME }}
+          location: 'us-central1'
+
+      - id: get-pods
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: kubectl get pods -A
+
+      - id: install-quiz-app
+        run: |
+          helm upgrade --install helm-deploy-quiz-app quiz-app-helm \
+            --set appReplicas=3 \
+            --wait 
