@@ -1,0 +1,10 @@
+# Este archivo YAML es la configuración del Namespace. Un Namespace es una forma de dividir los recursos de un cluster de Kubernetes en diferentes ámbitos lógicos. Los recursos dentro de un namespace son aislados entre sí y pueden tener diferentes políticas de acceso y gestión.
+apiVersion: v1
+# En kind declaramos el recurso a utilizar, que en este caso será "Namespace"
+kind: Namespace
+# La sección "metadata" contiene información sobre el recurso Namespace. El nombre del recurso es "practica". El campo "creationTimestamp" es null, indicando que el namespace no ha sido creado todavía
+metadata:
+  creationTimestamp: null
+  name: practica
+spec: {}
+status: {}

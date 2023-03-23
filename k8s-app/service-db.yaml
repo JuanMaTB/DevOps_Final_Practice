@@ -1,0 +1,18 @@
+# Este archivo es una configuración de un Service. Un Service es un recurso que permite a los pods dentro de un cluster comunicarse entre sí de forma segura y escalable. También permite a los pods ser accedidos desde el exterior del cluster
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: quiz-app-service
+  name: quiz-app-service
+  namespace: practica
+spec:
+  ports:
+  - port: 27017
+# En la sección "selector" se especifica que se deben seleccionar los pods con la etiqueta "app: quiz-app-db" para enlazarlos al Service.  
+  selector:
+    app: quiz-app-db
+# En "clusterIP" se especifica que no se debe asignar una IP del cluster al servicio, lo cual significa que no se podrá acceder al servicio desde dentro del cluster mediante una dirección IP.
+  clusterIP: None
+
+

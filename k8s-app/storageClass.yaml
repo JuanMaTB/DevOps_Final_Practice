@@ -1,0 +1,16 @@
+# Este archivo se configura de un Storage Class. Un Storage Class es un recurso que se utiliza para describir diferentes opciones de almacenamiento que están disponibles en un cluster de Kubernetes. Los desarrolladores pueden utilizar estos Storage Classes para especificar qué tipo de almacenamiento desean utilizar para un determinado recurso de almacenamiento, como un Persistent Volume (PV) o un Persistent Volume Claim (PVC
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: sv-pv
+# La sección "provisioner" especifica el proveedor de almacenamiento que se utilizará para crear los volúmenes persistentes, en este caso es "kubernetes.io/gce-pd"
+provisioner: kubernetes.io/gce-pd
+parameters:
+# "type" se especifica el tipo de disco que se utilizará, pd-standard significa disco estándar de google cloud.  
+  type: pd-standard
+# "fstype" se especifica el sistema de archivos que se utilizará, ext4 en este caso  
+  fstype: ext4
+# "replication-type" se especifica si el volumen se replicará en varios nodos, en este caso no se especifica replicación. 
+  replication-type: none
+# En "reclaimPolicy" especifica la política de recuperación de almacenamiento que se utilizará cuando un PVC asociado a este Storage Class sea eliminado. Aquí, especificamos "Retain", lo que significa que el volumen persistente no será eliminado cuando el PVC sea borrado.
+reclaimPolicy: Retain

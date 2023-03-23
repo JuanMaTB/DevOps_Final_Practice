@@ -1,0 +1,27 @@
+# Este archivo YAML configura un Issuer de cert-manager. Cert-manager es un add-on de Kubernetes que se utiliza para automatizar la gestión de certificados SSL/TLS para servicios de Kubernetes. Un Issuer es un recurso que se utiliza para configurar un proveedor de certificados, como Let's Encrypt, para que cert-manager pueda solicitar y renovar certificados.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: letsencrypt-quiz-apps-ssl
+  namespace: practica
+spec:
+  acme:
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: roberto.asir@gmail.com
+# En "server" se especifica la dirección del servidor de Let's Encrypt, puede ser un servidor de producción o de pruebas.    
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    #server: https://acme-v02.api.letsencrypt.org/directory
+# Nombre del secret que se utilizará para almacenar la clave privada de la cuenta.    
+    privateKeySecretRef:
+      # Secret resource that will be used to store the account's private key.
+      name: quiz-app-ingress-ssl-cert
+    # Add a single challenge solver, HTTP01 using nginx
+# En la sección "solvers" se especifica el tipo de desafío que se utilizará para la autenticación del dominio, en este caso HTTP01 y se especifica que se utilizará el controlador de ingress nginx    
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+# Un desafío en el contexto de Cert-manager y Let's Encrypt es una forma de demostrar que el solicitante de un certificado es el propietario del dominio para el cual se está solicitando el certificado. Cuando se solicita un certificado SSL/TLS a través de Let's Encrypt, el sistema de Let's Encrypt realizará un desafío para verificar que el solicitante tiene acceso al dominio. Existen varios tipos de desafíos, como HTTP01 y DNS01, cada uno con su propio mecanismo de verificación.
+# En este caso, el desafío especificado en el archivo es HTTP01, lo que significa que se utiliza una solicitud HTTP para verificar que el solicitante tiene control sobre el dominio en cuestión. El controlador de ingress nginx se utiliza para manejar estas solicitudes HTTP y proporcionar una respuesta adecuada para completar el desafío.

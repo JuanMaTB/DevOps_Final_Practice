@@ -1,0 +1,20 @@
+# Este archivo es una configuración de un Service. Un Service es un recurso que permite a los pods dentro de un cluster comunicarse entre sí de forma segura y escalable. También permite a los pods ser accedidos desde el exterior del cluster.
+apiVersion: v1
+kind: Service
+# Como podemos ver el nombre del recurso es "quiz-app-serviceapp" y se encuentra en el namespace "practica". Sinembargo el Service tiene una etiqueta "app: quiz-app", que se utilizará para seleccionar los pods a los que se enlaza el servicio.
+metadata:
+  labels:
+    app: quiz-app
+  name: quiz-app-serviceapp
+  namespace: practica
+spec:
+# En la sección "ports" se especifica que se expone el puerto 5000 del Service con protocolo TCP y se enlaza al puerto 5000 de los pods seleccionados  
+  ports:
+  - port: 5000
+    protocol: TCP
+    targetPort: 5000
+# El "selector" especifica que se deben seleccionar los pods con la etiqueta "app: quiz-app" para enlazarlos al Service.  
+  selector:
+    app: quiz-app
+# "type" se especifica que el Service debe ser de tipo "LoadBalancer", lo cual significa que se proporciona una dirección IP externa para acceder al Service.  
+  type: LoadBalancer

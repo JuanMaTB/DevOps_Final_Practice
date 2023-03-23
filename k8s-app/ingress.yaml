@@ -1,0 +1,23 @@
+# Este archivo YAML es una configuración de un Ingress que es un recurso que nos permite configurar cómo los servicios dentro de un cluster deben ser accedidos desde el exterior.
+apiVersion: networking.k8s.io/v1
+# Aqui estamos especificamos que utilizamos el recurso Ingress
+kind: Ingress
+# En esta parte especificaremos el nombre, "quiz-app-ingress" y namespace en el que lo ubicamos, "practica". La anotación "kubernetes.io/ingress.class: nginx" especifica que el controlador de ingress utilizado será NGINX.
+metadata:
+  name: quiz-app-ingress
+  namespace: practica
+  annotations:
+    kubernetes.io/ingress.class: nginx
+# En esta sección, hay una sola regla que define el host es "10-102-182-15.nip.io" y que utiliza el protocolo HTTP. Además configuramos que cuando se accede a la raíz "/" (pathType: Prefix), el tráfico debe ser enviado al servicio "quiz-app-serviceapp" y puerto 5000.
+spec:
+  rules:
+  - host: 10-102-182-15.nip.io
+    http:
+      paths:
+      - path: '/'
+        pathType: Prefix
+        backend:
+          service:
+            name: quiz-app-serviceapp
+            port:
+              number: 5000

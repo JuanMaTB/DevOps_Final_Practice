@@ -1,0 +1,92 @@
+# Este archivo YAML es una configuración de Kubernetes para crear un StatefulSet. El StatefulSet es un recurso de Kubernetes que se utiliza para desplegar conjuntos de contenedores que necesitan mantener un estado persistente.
+apiVersion: apps/v1
+# "kind" especifica el tipo de recurso que se está creando, en este caso, "StatefulSet".
+kind: StatefulSet
+# "metadata" contiene información adicional sobre el recurso, como las etiquetas "app: quiz-app-db" y el nombre "quiz-app-db" y el namespace "practica" donde se desplegara el recurso.
+metadata:
+  labels:
+    app: quiz-app-db
+  name: quiz-app-db
+  namespace: practica
+# En "spec" se esta especificando la configuración para el recurso... El volumen que se usará para almacenar los datos, el nombre del servicio, el número de réplicas, las etiquetas de selección de nodo, y la configuración del contenedor.
+spec:
+  volumeClaimTemplates:
+  - metadata:
+      name: db
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: sv-pv
+      resources:
+        requests:
+          storage: 1Gi
+  serviceName: "quiz-app-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quiz-app-db
+  template:
+    metadata:
+      labels:
+        app: quiz-app-db
+    spec:
+# En La sección "affinity" se especifica cómo hay que agrupar los pods (contenedores) en los nodos (máquinas) de Kubernetes.      
+      affinity:
+# "podAffinity" especifica la preferencia para colocar pods juntos. Aquí establecemos una afinidad para los pods con la etiqueta "app: quiz-app" en el namespace "practica", y se utiliza "kubernetes.io/hostname" como clave de topología. Esto significa que si hay varios pods con la etiqueta "app: quiz-app" en el namespace "practica", se intentarán colocar en el mismo nodo si es posible. El "weight 1" indica que esta afinidad es obligatoria.
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: quiz-app
+                namespaces:
+                  - "practica"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+# "podAntiAffinity" especifica la evita colocar pods juntos. En este caso, se establece para los pods con la etiqueta "app: quiz-app-db" en el namespace "practica", y se utiliza "kubernetes.io/hostname" como la clave de topología. Esto significa que si hay varios pods con la etiqueta "app: quiz-app-db" en el namespace "practica", se intentará colocarlos en diferentes nodos si es posible. El "weight 1" indica que esta anti-afinidad es obligatoria.
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: quiz-app-db
+                namespaces:
+                  - "practica"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+# Especificamos la imagen de contenedor que vamos a utilizar. Aquí utilizamos la versión 6.0.3 de MongoDB.      
+      containers:
+      - image: mongo:6.0.3
+# La sección "volumeMounts" especifica cómo se deben montar los volúmenes dentro del contenedor. En este caso, se está montando el volumen con el nombre "db" en el directorio "/data/db" dentro del contenedor.        
+        volumeMounts:
+        - mountPath: /data/db
+          name: db
+        name: mongo
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "400m"
+# Se está exponiendo el puerto 27017        
+        ports:
+        - containerPort: 27017
+#  En la siguiente parte especificamos las variables de entorno que deben establecerse dentro del contenedor.  "MONGO_INITDB_ROOT_PASSWORD" y "MONGO_INITDB_ROOT_USERNAME" con valores obtenidos desde un secret con nombre "secret-db" y que explicaremos en su propio archivo. Aun que básicamente, lo que contiene este secret son las claves "MONGO_INITDB_ROOT_PASSWORD" y "MONGO_INITDB_ROOT_USERNAME", las cuales son utilizadas para establecer las variables de entorno correspondientes en el contenedor.      
+        env:
+        - name: MONGO_INITDB_ROOT_PASSWORD 
+          valueFrom:
+            secretKeyRef:
+              name: secret-db
+              key: MONGO_INITDB_ROOT_PASSWORD
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: secret-db
+              key: MONGO_INITDB_ROOT_USERNAME
+        readinessProbe:
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe: 
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 20
+          periodSeconds: 10
