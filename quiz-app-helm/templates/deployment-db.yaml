@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: quiz-app-db
+  name: quiz-app-db
+  namespace: practica
+spec:
+  volumeClaimTemplates:
+  - metadata:
+      name: db
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: sv-pv
+      resources:
+        requests:
+          storage: 1Gi
+  serviceName: "quiz-app-service"
+  replicas: {{ .Values.dbReplicas }}
+  selector:
+    matchLabels:
+      app: quiz-app-db
+  template:
+    metadata:
+      labels:
+        app: quiz-app-db
+    spec:
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: quiz-app
+                namespaces:
+                  - "practica"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: quiz-app-db
+                namespaces:
+                  - "practica"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+      containers:
+      - image: mongo:{{ .Values.dbAppVersion }}
+        volumeMounts:
+        - mountPath: /data/db
+          name: db
+        name: mongo
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "400m"
+        ports:
+        - containerPort: 27017
+        env:
+        - name: MONGO_INITDB_ROOT_PASSWORD 
+          valueFrom:
+            secretKeyRef:
+              name: secret-db
+              key: MONGO_INITDB_ROOT_PASSWORD
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: secret-db
+              key: MONGO_INITDB_ROOT_USERNAME
+        readinessProbe:
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        livenessProbe: 
+          tcpSocket:
+            port: 27017
+          initialDelaySeconds: 20
+          periodSeconds: 10

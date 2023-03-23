@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: quiz-app
+  name: quiz-app
+  namespace: practica
+spec:
+  replicas: {{ .Values.appReplicas }}
+  selector:
+    matchLabels:
+      app: quiz-app
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: quiz-app
+    spec:
+      affinity:
+        podAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: quiz-app-db
+                namespaces:
+                  - "practica"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: quiz-app
+                namespaces:
+                  - "practica"
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+      containers:
+        #- image: carlosfeufernandez/app-quiz-pf:latest
+      - image: carlosfeufernandez/silicon-valley-proyecto-final:{{ .Values.appVersion }}
+        name: app-quiz-pf
+        ports:
+          - containerPort: 5000
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        env:
+        - name: MONGODB_URI 
+          valueFrom:
+            secretKeyRef:
+              name: secret-db
+              key: MONGODB_URI
+        livenessProbe:
+          httpGet:
+            path: /auth/register
+            port: 5000
+          failureThreshold: 1
+          periodSeconds: 10
+          initialDelaySeconds: 25
+        readinessProbe:
+          httpGet:
+            path: /auth/register
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 5
+      initContainers:
+        - name: check-db
+          image: busybox:1.28
+          command: ['sh', '-c', "until nc -zv quiz-app-service 27017; do sleep 5; done" ]
+status: {}

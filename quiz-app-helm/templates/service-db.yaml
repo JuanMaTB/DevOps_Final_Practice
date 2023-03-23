@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: quiz-app-service
+  name: quiz-app-service
+  namespace: practica
+spec:
+  ports:
+  - port: 27017
+  selector:
+    app: quiz-app-db
+  clusterIP: None
+
+

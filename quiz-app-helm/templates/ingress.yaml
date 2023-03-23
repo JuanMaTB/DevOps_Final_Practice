@@ -1,0 +1,24 @@
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: quiz-app-ingress
+  namespace: practica
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    external-dns.alpha.kubernetes.io/hostname: practicafinal-sv.robertoasir.com
+    external-dns.alpha.kubernetes.io/ttl: "120"
+
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: practicafinal-sv.robertoasir.com
+    http:
+      paths:
+      - path: '/'
+        pathType: Prefix
+        backend:
+          service:
+            name: quiz-app-serviceapp
+            port:
+              number: 5000
