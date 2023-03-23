@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  creationTimestamp: null
+  name: ingress-grafana
+  namespace: monitoring
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+    external-dns.alpha.kubernetes.io/hostname: grafana.robertoasir.com
+    external-dns.alpha.kubernetes.io/ttl: "120"
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: grafana.robertoasir.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: prometheus-grafana-lb
+            port:
+              number: 3000
+        path: '/'
+        pathType: Prefix
+status:
+  loadBalancer: {}
