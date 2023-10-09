@@ -27,6 +27,21 @@ This approach allows us to have more precise and efficient control over our appl
 
 Through this initiative, we aim to showcase and strengthen our skills in building, monitoring, and scaling cloud infrastructure, which is crucial for any professional in the tech industry.
 
+____________________________________________________________________________________________________________________________________________________________________________________________________
+
+
+Como equipo, estamos enfocados en demostrar nuestra capacidad para implementar una infraestructura automatizada y escalable utilizando las tecnologías más recientes y relevantes disponibles.
+
+Utilizamos herramientas como Terraform para automatizar la creación de recursos en la nube, CI/CD con Github Actions para configurar un pipeline de integración continua y entrega, y la pila de Grafana con Prometheus para el monitoreo del rendimiento de la aplicación.
+
+Además, desplegamos una aplicación en un clúster de Kubernetes utilizando Docker y Helm.
+
+Abrazando la filosofía DevOps, aspiramos a aplicar la metodología GitOps. De esta manera, nuestro sistema detecta cambios y desencadena una serie de acciones para actualizar nuestra imagen Docker, actualizar nuestro repositorio e iniciar todos los componentes necesarios para versionar nuestra aplicación y mantenerla operativa.
+
+Este enfoque nos permite tener un control más preciso y eficiente sobre nuestra aplicación, asegurando su rendimiento óptimo en todo momento.
+
+A través de esta iniciativa, aspiramos a mostrar y fortalecer nuestras habilidades en la construcción, monitoreo y escalado de infraestructuras en la nube, lo cual es crucial para cualquier profesional en la industria tecnológica
+
 ## Diagram
 ![diagrama-silicon-valley drawio (1)](https://user-images.githubusercontent.com/107815913/215150296-a371314c-338e-423d-81a2-76212735b3c6.png)
 
